@@ -11,26 +11,35 @@ Require Import Frap Pset2Sig.
 Theorem either_None_right : forall {A} (xo : option A),
     either xo None = xo.
 Proof.
-Admitted.
+  intros A xo; destruct xo; cbn; try auto.
+Qed.
+
 
 (* [either] is associative, just like [++].
  *)
 Theorem either_assoc : forall {A} (xo yo zo : option A),
     either (either xo yo) zo = either xo (either yo zo).
 Proof.
-Admitted.
+  intros A xo yo zo.
+  destruct xo, yo, zo; cbn; try auto.
+Qed.
+
 
 (* [head] should compute the head of a list, that is,
  * it should return [Some] with the first element of
  * the list if the list is nonempty, and [None]
  * if the list is empty.
  *)
-Fixpoint head {A} (xs : list A) : option A.
-Admitted.
+Fixpoint head {A} (xs : list A) : option A :=
+  match xs with
+  | [] => None
+  | h :: t => Some h
+  end.
+
 
 Example head_example : head [1; 2; 3] = Some 1.
-Proof.
-Admitted.
+Proof. auto. Qed.
+
 
 (* The following theorem makes a formal connection
  * between [either] and [++].
@@ -38,8 +47,12 @@ Admitted.
 Theorem either_app_head : forall {A} (xs ys : list A),
     head (xs ++ ys) = either (head xs) (head ys).
 Proof.
-Admitted.
+  intros A xs ys.
+  destruct xs; cbn; auto.
+Qed.
 
+  
+  
 (* [leftmost_Node] should compute the leftmost node of
  * a tree. 
  *
@@ -47,14 +60,22 @@ Admitted.
  * recursion (i.e., pattern matching) on the [tree] argument,
  * without using the [flatten] operation.
  *)
-Fixpoint leftmost_Node {A} (t : tree A) : option A.
-Admitted.
+Print tree.
+(* Inductive tree (A : Type) : Type :=  Leaf : tree A | Node : tree A -> A -> tree A -> tree A *)
+
+Fixpoint leftmost_Node {A} (t : tree A) : option A :=
+  match t with
+  | Leaf => None
+  | Node Leaf x _ => Some x
+  | Node l _ _ => leftmost_Node l
+  end.
+
 
 Example leftmost_Node_example :
     leftmost_Node (Node (Node Leaf 2 (Node Leaf 3 Leaf)) 1 Leaf)
     = Some 2.
-Proof.
-Admitted.
+Proof. cbn. auto. Qed.
+
 
 (* Prove that the leftmost node of the tree is the same
  * as the head of the list produced by flattening the tree
@@ -63,7 +84,20 @@ Admitted.
 Theorem leftmost_Node_head : forall {A} (t : tree A),
       leftmost_Node t = head (flatten t).
 Proof.
-Admitted.
+  intro A.
+  induction t.
+  + auto.
+  + destruct t1. auto.
+    assert (leftmost_Node (Node (Node t1_1 d0 t1_2) d t2) =
+            leftmost_Node (Node t1_1 d0 t1_2)) by auto.
+    rewrite H. clear H.
+    assert ((flatten t1_1 ++ d0 :: flatten t1_2) ++ d :: flatten t2 =
+            flatten (Node (Node t1_1 d0 t1_2) d t2)) by auto.
+    rewrite <- H. clear H.
+    rewrite either_app_head. rewrite IHt1.
+    cbn. destruct (flatten t1_1); try auto.
+Qed.
+
 
 (* Now let's work with the binary tries we defined earlier!
  *
@@ -76,7 +110,7 @@ Admitted.
  * contains entries for those keys that begin with [false].
  *)
 Fixpoint lookup {A} (k : list bool) (t : binary_trie A) : option A.
-Admitted.
+
 
 Example lookup_example1 : lookup [] (Node Leaf (None : option nat) Leaf) = None.
 Proof.
